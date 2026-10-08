@@ -1,0 +1,47 @@
+# Minimal config for a single-user, loopback-only CLIProxyAPI.
+# Copy to ~/.config/cliproxyapi/config.yaml with mode 0600 and replace the
+# client key below (see README.md). The key authenticates local clients to the
+# proxy; it is not an upstream provider key.
+config-version: 8
+
+server:
+  host: "127.0.0.1"
+  port: 8317
+  # Skips the request-logging middleware, so request/response bodies (including
+  # error dumps) are never written to disk.
+  commercial-mode: true
+  discovery:
+    enabled: false
+
+management:
+  allow-remote: false
+  # Empty disables the Management API entirely.
+  secret-key: ""
+  disable-control-panel: true
+
+access:
+  api-keys:
+    - "REPLACE-WITH-GENERATED-KEY"
+
+oauth:
+  auth-dir: "~/.local/share/cliproxyapi/auth"
+  model-alias:
+    claude:
+      # Some clients still request this retired model ID for background work
+      # (titles, summaries). Route it to a current Haiku model.
+      - name: "claude-haiku-5-5"
+        alias: "claude-3-5-haiku-20241022"
+        fork: true
+
+observability:
+  logs:
+    debug: false
+    logging-to-file: false
+    request-log: false
+  usage:
+    usage-statistics-enabled: false
+  pprof:
+    enable: false
+
+plugins:
+  enabled: false

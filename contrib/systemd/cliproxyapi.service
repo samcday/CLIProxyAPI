@@ -1,0 +1,18 @@
+# systemd user unit for a local, loopback-only CLIProxyAPI.
+# Install to ~/.config/systemd/user/cliproxyapi.service; see README.md.
+[Unit]
+Description=Local CLIProxyAPI (OpenAI/Anthropic-compatible proxy)
+Documentation=https://github.com/router-for-me/CLIProxyAPI
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/cliproxyapi
+WorkingDirectory=%h/.local/state/cliproxyapi
+Restart=on-failure
+RestartSec=3
+UMask=0077
+NoNewPrivileges=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=default.target
