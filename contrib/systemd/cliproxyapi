@@ -5,11 +5,27 @@ set -eu
 umask 077
 
 bin="${CLIPROXYAPI_BIN:-$HOME/.local/share/cliproxyapi/cli-proxy-api}"
-config="${CLIPROXYAPI_CONFIG:-$HOME/.config/cliproxyapi/config.yaml}"
+template="${CLIPROXYAPI_CONFIG:-$HOME/.config/cliproxyapi/config.yaml}"
+key_file="${CLIPROXYAPI_KEY_FILE:-$HOME/.config/cliproxyapi/client-api-key}"
 state="${CLIPROXYAPI_STATE:-$HOME/.local/state/cliproxyapi}"
 
 # The server auto-loads .env from its working directory. Run from a dedicated
 # directory so a project's .env is never picked up by accident.
 mkdir -p "$state"
 cd "$state"
+
+# The config format has no environment or file expansion, so the client key is
+# kept out of the config and substituted for @CLIENT_API_KEY@ at startup. The
+# rendered file is private and rewritten on every start.
+key=$(cat "$key_file")
+case "$key" in
+  '' | *[!A-Za-z0-9._~-]*)
+    echo "cliproxyapi: $key_file must contain one key of [A-Za-z0-9._~-]" >&2
+    exit 1
+    ;;
+esac
+config="$state/config.yaml"
+sed "s|@CLIENT_API_KEY@|$key|g" "$template" > "$config.tmp"
+mv "$config.tmp" "$config"
+
 exec "$bin" --config "$config" "$@"

@@ -1,7 +1,8 @@
 # Minimal config for a single-user, loopback-only CLIProxyAPI.
-# Copy to ~/.config/cliproxyapi/config.yaml with mode 0600 and replace the
-# client key below (see README.md). The key authenticates local clients to the
-# proxy; it is not an upstream provider key.
+# Copy to ~/.config/cliproxyapi/config.yaml unchanged. The wrapper substitutes
+# @CLIENT_API_KEY@ from ~/.config/cliproxyapi/client-api-key at startup (see
+# README.md). The key authenticates local clients to the proxy; it is not an
+# upstream provider key.
 config-version: 8
 
 server:
@@ -21,7 +22,7 @@ management:
 
 access:
   api-keys:
-    - "REPLACE-WITH-GENERATED-KEY"
+    - "@CLIENT_API_KEY@"
 
 oauth:
   auth-dir: "~/.local/share/cliproxyapi/auth"

@@ -67,3 +67,11 @@ docker-compose.override.yml
 
 # Local LLM Wiki vault
 .llm-wiki
+
+# Track only the fork's landing skill.
+!/.agents/
+!/.agents/skills/
+/.agents/skills/*
+!/.agents/skills/land/
+/.agents/skills/land/*
+!/.agents/skills/land/SKILL.md

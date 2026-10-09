@@ -9,12 +9,20 @@ custom OpenAI- or Anthropic-compatible provider.
 | --- | --- |
 | `cliproxyapi` | `~/.local/bin/cliproxyapi` (mode 0755) |
 | `cliproxyapi.service` | `~/.config/systemd/user/cliproxyapi.service` |
-| `config.example.yaml` | `~/.config/cliproxyapi/config.yaml` (mode 0600) |
+| `config.example.yaml` | `~/.config/cliproxyapi/config.yaml` |
+
+The client key lives in its own file, `~/.config/cliproxyapi/client-api-key`
+(mode 0600), so the config holds no secrets. The config format has no
+environment or file expansion, so on every start the wrapper substitutes the
+key for `@CLIENT_API_KEY@` and runs the server against the rendered copy at
+`~/.local/state/cliproxyapi/config.yaml` (mode 0600). Edit the config in
+`~/.config`, then restart the service; edits to the rendered copy are
+overwritten.
 
 The wrapper expects the server binary at
-`~/.local/share/cliproxyapi/cli-proxy-api`. Override this, the config path, or
-the working directory with `CLIPROXYAPI_BIN`, `CLIPROXYAPI_CONFIG`, or
-`CLIPROXYAPI_STATE`.
+`~/.local/share/cliproxyapi/cli-proxy-api`. Override the binary, config, key
+file, or working directory with `CLIPROXYAPI_BIN`, `CLIPROXYAPI_CONFIG`,
+`CLIPROXYAPI_KEY_FILE`, or `CLIPROXYAPI_STATE`.
 
 ## Install
 
@@ -26,11 +34,9 @@ go build -o ~/.local/share/cliproxyapi/cli-proxy-api ./cmd/server
 install -Dm755 contrib/systemd/cliproxyapi ~/.local/bin/cliproxyapi
 install -Dm644 contrib/systemd/cliproxyapi.service ~/.config/systemd/user/cliproxyapi.service
 
-# Config with a freshly generated client key.
-(umask 077 && mkdir -p ~/.config/cliproxyapi && \
-  openssl rand -hex 32 > ~/.config/cliproxyapi/client-api-key && \
-  sed "s/REPLACE-WITH-GENERATED-KEY/$(cat ~/.config/cliproxyapi/client-api-key)/" \
-    contrib/systemd/config.example.yaml > ~/.config/cliproxyapi/config.yaml)
+install -Dm644 contrib/systemd/config.example.yaml ~/.config/cliproxyapi/config.yaml
+# Generate a client key (or write your own key to this file).
+(umask 077 && openssl rand -hex 32 > ~/.config/cliproxyapi/client-api-key)
 
 systemctl --user daemon-reload
 systemctl --user enable --now cliproxyapi.service
