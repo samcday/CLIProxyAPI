@@ -54,9 +54,11 @@ to unrelated work. No upstream submissions, releases, force-pushes, or routine b
    `contrib/systemd/cliproxyapi.service`, `contrib/systemd/config.example.yaml`.
 
 5. **Confirm it works.** Check the service is active, remains loopback-only,
-   rejects unauthenticated requests, and returns Claude models from authenticated
-   `GET /v1/models`. Then wait for the user's confirmation that a real Claude
-   turn with tool use works. Until then, deployment is awaiting verification,
+   rejects unauthenticated requests, and returns the configured models from
+   authenticated `GET /v1/models`. Then wait for the user's confirmation that a
+   real turn with tool use works through the deployed service, on any configured
+   credential. The turn proves the deployment path, so its credential must not
+   be one specific provider. Until then, deployment is awaiting verification,
    not landed. On failure, report the error and service state; do not publish.
 
 6. **Publish.** Recheck that the candidate and destination have not changed;
