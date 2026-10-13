@@ -1,8 +1,7 @@
 # Minimal config for a single-user, loopback-only CLIProxyAPI.
 # Copy to ~/.config/cliproxyapi/config.yaml unchanged. The wrapper substitutes
-# @CLIENT_API_KEY@ from ~/.config/cliproxyapi/client-api-key at startup (see
-# README.md). The key authenticates local clients to the proxy; it is not an
-# upstream provider key.
+# each @PLACEHOLDER@ from a key file in ~/.config/cliproxyapi at startup (see
+# README.md), so this file holds no secrets.
 config-version: 8
 
 server:
@@ -21,8 +20,32 @@ management:
   disable-control-panel: true
 
 access:
+  # Authenticates local clients to the proxy; not an upstream provider key.
   api-keys:
     - "@CLIENT_API_KEY@"
+
+# Upstream provider API keys. Delete a group to stop using that provider; its
+# key file is only needed while the group is present.
+api-keys:
+  # Xiaomi MiMo Token Plan over its Anthropic-compatible endpoint, served by the
+  # Claude executor. The models list is required: without it this key would
+  # advertise, and be selected for, the whole Claude catalog.
+  claude:
+    - name: mimo
+      # Token Plan keys are bound to the cluster that issued them (sgp or cn).
+      # Use the Base URL shown on the Token Plan page, with /anthropic appended.
+      base-url: "https://token-plan-sgp.xiaomimimo.com/anthropic"
+      models:
+        - name: "mimo-v2.6-pro"
+          # Keep thinking blocks verbatim and replay reasoning the client
+          # dropped; MiMo rejects multi-turn tool calls without it.
+          is-compat: true
+        - name: "mimo-v2.6-pro[1m]" # MiMo's 1M-context variant, passed through as-is
+          is-compat: true
+        - name: "mimo-v2.6-flash"
+          is-compat: true
+      keys:
+        - api-key: "@MIMO_API_KEY@"
 
 oauth:
   auth-dir: "~/.local/share/cliproxyapi/auth"

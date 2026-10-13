@@ -6,7 +6,7 @@ umask 077
 
 bin="${CLIPROXYAPI_BIN:-$HOME/.local/share/cliproxyapi/cli-proxy-api}"
 template="${CLIPROXYAPI_CONFIG:-$HOME/.config/cliproxyapi/config.yaml}"
-key_file="${CLIPROXYAPI_KEY_FILE:-$HOME/.config/cliproxyapi/client-api-key}"
+key_dir="${CLIPROXYAPI_KEY_DIR:-$HOME/.config/cliproxyapi}"
 state="${CLIPROXYAPI_STATE:-$HOME/.local/state/cliproxyapi}"
 
 # The server auto-loads .env from its working directory. Run from a dedicated
@@ -14,18 +14,36 @@ state="${CLIPROXYAPI_STATE:-$HOME/.local/state/cliproxyapi}"
 mkdir -p "$state"
 cd "$state"
 
-# The config format has no environment or file expansion, so the client key is
-# kept out of the config and substituted for @CLIENT_API_KEY@ at startup. The
-# rendered file is private and rewritten on every start.
-key=$(cat "$key_file")
-case "$key" in
-  '' | *[!A-Za-z0-9._~-]*)
-    echo "cliproxyapi: $key_file must contain one key of [A-Za-z0-9._~-]" >&2
-    exit 1
-    ;;
-esac
+# The config format has no environment or file expansion, so keys are kept
+# out of the config and substituted at startup: each @NAME@ placeholder in
+# the template is replaced with the contents of $key_dir/<name>, where <name>
+# is NAME lowercased with underscores as dashes (@CLIENT_API_KEY@ reads
+# client-api-key; CLIPROXYAPI_KEY_FILE overrides that one path). A placeholder
+# must be a complete double-quoted value on a property or list-item line.
+# Comments and other text stay literal and do not need key files.
+# The rendered file is private and rewritten on every start.
 config="$state/config.yaml"
-sed "s|@CLIENT_API_KEY@|$key|g" "$template" > "$config.tmp"
+# Use the same value boundaries to discover and replace placeholders. Preserve
+# the prefix and any inline comment instead of substituting across the line.
+prefix='^([[:space:]]*-[[:space:]]*|[[:space:]]*[^#:"[:space:]][^#:"]*:[[:space:]]*)'
+suffix='([[:space:]]*(#.*)?)$'
+script=""
+names=$(sed -nE "s!${prefix}\"@([A-Z][A-Z0-9_]*)@\"${suffix}!\\2!p" "$template")
+for name in $(printf '%s\n' "$names" | sort -u); do
+  key_file="$key_dir/$(echo "$name" | tr 'A-Z_' 'a-z-')"
+  if [ "$name" = CLIENT_API_KEY ]; then
+    key_file="${CLIPROXYAPI_KEY_FILE:-$key_file}"
+  fi
+  key=$(cat "$key_file")
+  case "$key" in
+    '' | *[!A-Za-z0-9._~-]*)
+      echo "cliproxyapi: $key_file must contain one key of [A-Za-z0-9._~-]" >&2
+      exit 1
+      ;;
+  esac
+  script="${script}s!${prefix}\"@$name@\"${suffix}!\\1\"$key\"\\2!;"
+done
+sed -E "$script" "$template" > "$config.tmp"
 mv "$config.tmp" "$config"
 
 exec "$bin" --config "$config" "$@"
