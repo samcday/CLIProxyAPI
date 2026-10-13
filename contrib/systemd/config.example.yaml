@@ -24,6 +24,13 @@ access:
   api-keys:
     - "@CLIENT_API_KEY@"
 
+upstream:
+  claude:
+    # By default the Anthropic model list disguises every non-Claude model ID
+    # as claude-fable-5-dd-<id reversed>, so a Claude-only client can still
+    # select it. Local clients accept any ID, so list the real IDs instead.
+    disable-cloaking-model-list: true
+
 # Upstream provider API keys. Delete a group to stop using that provider; its
 # key file is only needed while the group is present.
 api-keys:
