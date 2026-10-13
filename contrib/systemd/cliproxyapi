@@ -1,6 +1,8 @@
 #!/bin/sh
 # Wrapper for running CLIProxyAPI as a user service or for interactive logins
 # (for example: cliproxyapi --claude-login). Install to ~/.local/bin/cliproxyapi.
+# `cliproxyapi render` only rewrites the rendered config, which a running
+# service picks up without a restart.
 set -eu
 umask 077
 
@@ -21,7 +23,7 @@ cd "$state"
 # client-api-key; CLIPROXYAPI_KEY_FILE overrides that one path). A placeholder
 # must be a complete double-quoted value on a property or list-item line.
 # Comments and other text stay literal and do not need key files.
-# The rendered file is private and rewritten on every start.
+# The rendered file is private and rewritten on every start and render.
 config="$state/config.yaml"
 # Use the same value boundaries to discover and replace placeholders. Preserve
 # the prefix and any inline comment instead of substituting across the line.
@@ -43,7 +45,15 @@ for name in $(printf '%s\n' "$names" | sort -u); do
   esac
   script="${script}s!${prefix}\"@$name@\"${suffix}!\\1\"$key\"\\2!;"
 done
+# Render to a temporary file first so a key or template error leaves the
+# previous config in place, then copy the result over the config in place: the
+# server's file watcher follows the inode, so a rename would detach it and
+# later edits would never hot-reload.
 sed -E "$script" "$template" > "$config.tmp"
-mv "$config.tmp" "$config"
+cat "$config.tmp" > "$config"
+rm -f "$config.tmp"
 
+if [ "${1-}" = render ]; then
+  exit 0
+fi
 exec "$bin" --config "$config" "$@"

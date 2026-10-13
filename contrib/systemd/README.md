@@ -28,8 +28,11 @@ active placeholder stops the startup.
 
 The wrapper runs the server with the rendered configuration at
 `~/.local/state/cliproxyapi/config.yaml` (mode 0600).
-Edit the configuration in `~/.config`, then restart `cliproxyapi.service`.
-The wrapper overwrites the rendered copy on each start.
+Edit the configuration or a key file in `~/.config`, then run
+`cliproxyapi render`. It rewrites the rendered copy in place, and the running
+service reloads it within a few seconds without a restart. Do not edit the
+rendered copy: the wrapper overwrites it on each start and render. A restart is
+only needed for a new binary, wrapper, or unit file.
 
 The wrapper expects the server binary at
 `~/.local/share/cliproxyapi/cli-proxy-api`. Override the binary, config, key

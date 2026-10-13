@@ -89,6 +89,22 @@ diff -u "$tmp/args" "$CLIPROXYAPI_STATE/args"
   fail 'rendered configuration is not mode 0600'
 printf 'PASS: replace values, preserve comments and text, forward arguments, mode 0600\n'
 
+# The server watches the rendered file by inode, so a re-render must rewrite
+# it in place for a running service to hot-reload, and `render` must not start
+# the server.
+inode=$(stat -c '%i' "$CLIPROXYAPI_STATE/config.yaml")
+printf '%s\n' 'tp-mimo-rotated-456' > "$CLIPROXYAPI_KEY_DIR/mimo-api-key"
+run render
+diff -u "$tmp/args" "$CLIPROXYAPI_STATE/args"
+[ "$(stat -c '%i' "$CLIPROXYAPI_STATE/config.yaml")" = "$inode" ] ||
+  fail 'render replaced the configuration file instead of rewriting it in place'
+grep -Fq -- 'api-key: "tp-mimo-rotated-456"' "$CLIPROXYAPI_STATE/config.yaml"
+[ ! -e "$CLIPROXYAPI_STATE/config.yaml.tmp" ] || fail 'render left a temporary file behind'
+printf '%s\n' 'tp-mimo-dummy-456' > "$CLIPROXYAPI_KEY_DIR/mimo-api-key"
+run render
+diff -u "$tmp/expected.yaml" "$CLIPROXYAPI_STATE/config.yaml"
+printf 'PASS: render rewrites the configuration in place without starting the server\n'
+
 mv "$CLIPROXYAPI_KEY_DIR/mimo-api-key" "$tmp/mimo-api-key"
 expect_failure 'started without an active provider key'
 printf 'PASS: missing active key fails without replacing the configuration\n'
